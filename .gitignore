@@ -1,2 +1,3 @@
 crossword-maker
 *.o
+.vscode
