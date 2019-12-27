@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
-GtkWidget* get_template_editor_window();
+#include "crossword.h"
+
+GtkWidget* template_editor_window_init(Crossword *template);
 
 #endif

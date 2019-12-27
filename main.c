@@ -4,9 +4,10 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
-    GtkWidget *window = get_template_editor_window();
+    Crossword *template = crossword_init(10, 10);
+    GtkWidget *window = template_editor_window_init(template);
     gtk_widget_show_all(window);
-
+    
     gtk_main();
     return 0;
 }
