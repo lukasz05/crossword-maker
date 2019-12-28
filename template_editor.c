@@ -9,6 +9,12 @@ typedef struct {
     Crossword *template;
 } GridButtonCallbackData;
 
+typedef struct {
+    GtkGrid *grid;
+    Crossword *template;
+} ToolButtonCallbackData;
+
+
 static void button_set_to_black(GtkWidget *button)
 {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -25,6 +31,29 @@ static void button_set_to_white(GtkWidget *button)
     gtk_css_provider_load_from_data(provider, "*{background-image:none;background-color:white;}", -1, NULL);
     gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);
+}
+
+static void grid_refresh_buttons(GtkGrid *grid, Crossword *template)
+{
+    for(int i = 0; i < template->height; i++)
+    {
+        for(int j = 0; j < template->width; j++)
+        {
+            GtkWidget *button = gtk_grid_get_child_at(grid, i, j);
+            if(template->content[i][j] == 0)
+                button_set_to_black(button);
+            else
+                button_set_to_white(button);
+        }
+    }
+}
+
+static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    crossword_invert_template(template);
+    grid_refresh_buttons(tool_data->grid, template);
 }
 
 static void grid_button_clicked_callback(GtkWidget *button, gpointer data)
@@ -52,10 +81,35 @@ GtkWidget* template_editor_window_init(Crossword *template)
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
     gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_W, WINDOW_H);
 
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *toolbar = gtk_toolbar_new();
     GtkWidget *grid = gtk_grid_new();
+    
+    GtkWidget *save_button = gtk_button_new();
+    GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
+    GtkWidget *save_image = gtk_image_new_from_file("icons/media-floppy.svg");
+    gtk_button_set_image(GTK_BUTTON(save_button), save_image);
+    gtk_tool_item_set_tooltip_text(save_tool_button, "Save");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), save_tool_button, -1);
+    
+    GtkToolItem *separator = gtk_separator_tool_item_new();
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), separator, -1);
+
+    GtkWidget *invert_button = gtk_button_new();
+    GtkToolItem *invert_tool_button = gtk_tool_button_new(invert_button, NULL);   
+    GtkWidget *invert_image = gtk_image_new_from_file("icons/gimp-invert.svg");
+    ToolButtonCallbackData *tool_data = malloc(sizeof(tool_data));
+    tool_data->grid = GTK_GRID(grid);
+    tool_data->template = template;
+    gtk_button_set_image(GTK_BUTTON(invert_button), invert_image);
+    gtk_tool_item_set_tooltip_text(invert_tool_button, "Invert colors");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), invert_tool_button, -1);
+    g_signal_connect(invert_tool_button, "clicked", G_CALLBACK(tool_invert_clicked_callback), tool_data);
+
+    gtk_box_pack_start(GTK_BOX(box), toolbar, FALSE, FALSE, 0);
+
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), TRUE);
-
     for(int i = 0; i < template->height; i++)
     {
         for(int j = 0; j < template->width; j++)
@@ -74,6 +128,8 @@ GtkWidget* template_editor_window_init(Crossword *template)
             gtk_grid_attach(GTK_GRID(grid), button, i, j, 1, 1);
         }
     }
-    gtk_container_add(GTK_CONTAINER(window), grid);
+    gtk_box_pack_start(GTK_BOX(box), grid, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(window), box);
+
     return window;
 }
