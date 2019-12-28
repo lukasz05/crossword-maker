@@ -48,6 +48,14 @@ static void grid_refresh_buttons(GtkGrid *grid, Crossword *template)
     }
 }
 
+static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    crossword_set_template_white(template);
+    grid_refresh_buttons(tool_data->grid, template);
+}
+
 static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
 {
     ToolButtonCallbackData *tool_data = data;
@@ -95,16 +103,27 @@ GtkWidget* template_editor_window_init(Crossword *template)
     GtkToolItem *separator = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), separator, -1);
 
+    GtkWidget *clear_button = gtk_button_new();
+    GtkToolItem *clear_tool_button = gtk_tool_button_new(clear_button, NULL);   
+    GtkWidget *clear_image = gtk_image_new_from_file("icons/gimp-grid.svg");
+    ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    clear_tool_data->grid = GTK_GRID(grid);
+    clear_tool_data->template = template;
+    gtk_button_set_image(GTK_BUTTON(clear_button), clear_image);
+    gtk_tool_item_set_tooltip_text(clear_tool_button, "Set all to white");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), clear_tool_button, -1);
+    g_signal_connect(clear_tool_button, "clicked", G_CALLBACK(tool_clear_clicked_callback), clear_tool_data);
+
     GtkWidget *invert_button = gtk_button_new();
     GtkToolItem *invert_tool_button = gtk_tool_button_new(invert_button, NULL);   
     GtkWidget *invert_image = gtk_image_new_from_file("icons/gimp-invert.svg");
-    ToolButtonCallbackData *tool_data = malloc(sizeof(tool_data));
-    tool_data->grid = GTK_GRID(grid);
-    tool_data->template = template;
+    ToolButtonCallbackData *invert_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    invert_tool_data->grid = GTK_GRID(grid);
+    invert_tool_data->template = template;
     gtk_button_set_image(GTK_BUTTON(invert_button), invert_image);
     gtk_tool_item_set_tooltip_text(invert_tool_button, "Invert colors");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), invert_tool_button, -1);
-    g_signal_connect(invert_tool_button, "clicked", G_CALLBACK(tool_invert_clicked_callback), tool_data);
+    g_signal_connect(invert_tool_button, "clicked", G_CALLBACK(tool_invert_clicked_callback), invert_tool_data);
 
     gtk_box_pack_start(GTK_BOX(box), toolbar, FALSE, FALSE, 0);
 
