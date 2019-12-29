@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "template_editor.h"
 
 #define WINDOW_W 600
@@ -10,10 +12,48 @@ typedef struct {
 } GridButtonCallbackData;
 
 typedef struct {
+    GtkWindow *parent;
     GtkGrid *grid;
     Crossword *template;
 } ToolButtonCallbackData;
 
+
+static bool dialog_request_size(GtkWindow *parent, int *width, int *height)
+{
+    GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Resize template", parent, flags, "OK", GTK_RESPONSE_ACCEPT, 
+                                                    "Cancel", GTK_RESPONSE_REJECT, NULL);
+
+    GtkWidget *width_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    GtkWidget *width_label = gtk_label_new("Width:");
+    GtkWidget *width_entry = gtk_spin_button_new_with_range(1, MAX_CROSSWORD_WIDTH, 1);
+    gtk_box_pack_start(GTK_BOX(width_box), width_label, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(width_box), width_entry, FALSE, FALSE, 5);
+    gtk_widget_show_all(width_box);
+
+    GtkWidget *height_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    GtkWidget *height_label = gtk_label_new("Height:");
+    GtkWidget *height_entry = gtk_spin_button_new_with_range(1, MAX_CROSSWORD_HEIGHT, 1);
+    gtk_box_pack_start(GTK_BOX(height_box), height_label, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(height_box), height_entry, FALSE, FALSE, 5);
+    gtk_widget_show_all(height_box);
+
+    GtkWidget *dialog_box = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_box_set_spacing(GTK_BOX(dialog_box), 5);
+    gtk_box_pack_start(GTK_BOX(dialog_box), width_box, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(dialog_box), height_box, FALSE, FALSE, 0);
+
+    int result = gtk_dialog_run(GTK_DIALOG(dialog));
+    if(result == GTK_RESPONSE_ACCEPT)
+    {
+        *width = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(width_entry));
+        *height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(height_entry));
+        gtk_widget_destroy(dialog);
+        return true;
+    }
+    gtk_widget_destroy(dialog);
+    return false;
+}
 
 static void button_set_to_black(GtkWidget *button)
 {
@@ -107,8 +147,14 @@ static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
     Crossword *template = tool_data->template;
     int w = template->width;
     int h = template->height;
-    crossword_resize(template, 12, 15);
-    grid_refresh_buttons(tool_data->grid, template, w, h);
+
+    int new_w = 1;
+    int new_h = 1;
+    if(dialog_request_size(tool_data->parent, &new_w, &new_h))
+    {
+        crossword_resize(template, new_w, new_h);
+        grid_refresh_buttons(tool_data->grid, template, w, h);
+    }
 }
 
 
@@ -157,6 +203,7 @@ GtkWidget* template_editor_window_init(Crossword *template)
     GtkToolItem *resize_tool_button = gtk_tool_button_new(resize_button, NULL);   
     GtkWidget *resize_image = gtk_image_new_from_file("icons/gimp-resize.svg");
     ToolButtonCallbackData *resize_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    resize_tool_data->parent = GTK_WINDOW(window);
     resize_tool_data->grid = GTK_GRID(grid);
     resize_tool_data->template = template;
     gtk_button_set_image(GTK_BUTTON(resize_button), resize_image);
