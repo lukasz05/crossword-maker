@@ -2,3 +2,4 @@ crossword-maker
 *.o
 .vscode
 .DS_Store
+.txt
