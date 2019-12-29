@@ -38,6 +38,39 @@ void crossword_destroy(Crossword *crossword)
     free(crossword);
 }
 
+void crossword_resize(Crossword *crossword, int width, int height)
+{
+
+    if(crossword->height < height) 
+        crossword->content = realloc(crossword->content, height * sizeof(int*));
+
+    int H = (crossword->height > height) ? crossword->height : height;
+    for(int i = 0; i < H; i++)
+    {   
+        if(i >= crossword->height)
+        {
+            crossword->content[i] = malloc(width * sizeof(int));
+            for(int j = 0; j < width; j++)
+                crossword->content[i][j] = ' ';
+        }
+        else if(i >= height)
+            free(crossword->content[i]);
+        else
+        {
+            crossword->content[i] = realloc(crossword->content[i], width * sizeof(int));
+            if(crossword->width < width)
+                for(int j = crossword->width; j < width; j++)
+                    crossword->content[i][j] = ' ';
+        }
+    }
+
+    if(crossword->height > height)
+        crossword->content = realloc(crossword->content, height * sizeof(int*));
+
+    crossword->height = height;
+    crossword->width = width;
+}
+
 void crossword_clear(Crossword *crossword)
 {
     for(int i = 0; i < crossword->height; i++)

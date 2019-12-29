@@ -10,6 +10,7 @@ typedef struct _Crossword
 
 Crossword* crossword_init(int width, int height);
 void crossword_destroy(Crossword *crossword);
+void crossword_resize(Crossword *crossword, int width, int height);
 void crossword_clear(Crossword *crossword);
 void crossword_invert_template(Crossword *crossword);
 void crossword_set_template_white(Crossword *crossword);

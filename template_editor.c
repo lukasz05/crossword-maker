@@ -33,37 +33,6 @@ static void button_set_to_white(GtkWidget *button)
     g_object_unref(provider);
 }
 
-static void grid_refresh_buttons(GtkGrid *grid, Crossword *template)
-{
-    for(int i = 0; i < template->height; i++)
-    {
-        for(int j = 0; j < template->width; j++)
-        {
-            GtkWidget *button = gtk_grid_get_child_at(grid, i, j);
-            if(template->content[i][j] == 0)
-                button_set_to_black(button);
-            else
-                button_set_to_white(button);
-        }
-    }
-}
-
-static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
-{
-    ToolButtonCallbackData *tool_data = data;
-    Crossword *template = tool_data->template;
-    crossword_set_template_white(template);
-    grid_refresh_buttons(tool_data->grid, template);
-}
-
-static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
-{
-    ToolButtonCallbackData *tool_data = data;
-    Crossword *template = tool_data->template;
-    crossword_invert_template(template);
-    grid_refresh_buttons(tool_data->grid, template);
-}
-
 static void grid_button_clicked_callback(GtkWidget *button, gpointer data)
 {
     GridButtonCallbackData *callback_data = data;
@@ -83,11 +52,70 @@ static void grid_button_clicked_callback(GtkWidget *button, gpointer data)
     }
 }
 
+static void grid_refresh_buttons(GtkGrid *grid, Crossword *template, int prev_w, int prev_h)
+{
+    for(int i = 0; i < template->height; i++)
+    {
+        for(int j = 0; j < template->width; j++)
+        {
+            GtkWidget *button = gtk_grid_get_child_at(grid, j, i);
+            if(button == NULL)
+            {
+                button = gtk_button_new();
+                GridButtonCallbackData *data = (GridButtonCallbackData*)malloc(sizeof(GridButtonCallbackData));
+                data->template = template;
+                data->y = i;
+                data->x = j;
+                g_signal_connect(button, "clicked", G_CALLBACK(grid_button_clicked_callback), data);
+                gtk_grid_attach(grid, button, j, i, 1, 1);
+                gtk_widget_show(button);
+            }
+
+            if(template->content[i][j] == 0)
+                button_set_to_black(button);
+            else
+                button_set_to_white(button);
+        }
+    }
+
+    for(int i = prev_w - 1; i >= template->width; i--)
+        gtk_grid_remove_column(grid, i);
+
+    for(int j = prev_h - 1; j >= template->height; j--)
+        gtk_grid_remove_row(grid, j);
+}
+
+static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    crossword_set_template_white(template);
+    grid_refresh_buttons(tool_data->grid, template, template->width, template->height);
+}
+
+static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    crossword_invert_template(template);
+    grid_refresh_buttons(tool_data->grid, template, template->width, template->height);
+}
+
+static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    int w = template->width;
+    int h = template->height;
+    crossword_resize(template, 12, 15);
+    grid_refresh_buttons(tool_data->grid, template, w, h);
+}
+
+
 GtkWidget* template_editor_window_init(Crossword *template)
 {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
-    gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_W, WINDOW_H);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *toolbar = gtk_toolbar_new();
@@ -125,6 +153,17 @@ GtkWidget* template_editor_window_init(Crossword *template)
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), invert_tool_button, -1);
     g_signal_connect(invert_tool_button, "clicked", G_CALLBACK(tool_invert_clicked_callback), invert_tool_data);
 
+    GtkWidget *resize_button = gtk_button_new();
+    GtkToolItem *resize_tool_button = gtk_tool_button_new(resize_button, NULL);   
+    GtkWidget *resize_image = gtk_image_new_from_file("icons/gimp-resize.svg");
+    ToolButtonCallbackData *resize_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    resize_tool_data->grid = GTK_GRID(grid);
+    resize_tool_data->template = template;
+    gtk_button_set_image(GTK_BUTTON(resize_button), resize_image);
+    gtk_tool_item_set_tooltip_text(resize_tool_button, "Resize");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), resize_tool_button, -1);
+    g_signal_connect(resize_tool_button, "clicked", G_CALLBACK(tool_resize_clicked_callback), resize_tool_data);
+
     gtk_box_pack_start(GTK_BOX(box), toolbar, FALSE, FALSE, 0);
 
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
@@ -144,7 +183,7 @@ GtkWidget* template_editor_window_init(Crossword *template)
             data->y = i;
             data->x = j;
             g_signal_connect(button, "clicked", G_CALLBACK(grid_button_clicked_callback), data);
-            gtk_grid_attach(GTK_GRID(grid), button, i, j, 1, 1);
+            gtk_grid_attach(GTK_GRID(grid), button, j, i, 1, 1);
         }
     }
     gtk_box_pack_start(GTK_BOX(box), grid, TRUE, TRUE, 0);
