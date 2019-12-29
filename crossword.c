@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "crossword.h"
 
@@ -105,4 +106,53 @@ void crossword_set_template_black(Crossword *crossword)
     for(int i = 0; i < crossword->height; i++)
         for(int j = 0; j < crossword->width; j++)
             crossword->content[i][j] = 0;
+}
+
+bool crossword_save_to_file(Crossword *crossword, char *filename)
+{
+    FILE *file = fopen(filename, "w");
+    if(file == NULL) return false;
+
+    fprintf(file, "%d %d\n", crossword->width, crossword->height);
+    for(int i = 0; i < crossword->height; i++)
+    {
+        for(int j = 0; j < crossword->width; j++)
+            fprintf(file, "%d ", crossword->content[i][j]);
+        fprintf(file, "\n");
+    }
+    fclose(file);
+    return true;
+}
+
+Crossword* crossword_load_from_file(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    if(file == NULL) return NULL;
+
+    int width, height;
+    fscanf(file, "%d %d", &width, &height);
+    Crossword *crossword = crossword_init(width, height);
+    if(crossword == NULL)
+    {
+        fclose(file);
+        return NULL;
+    }
+    crossword->width = width;
+    crossword->height = height;
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            if(fscanf(file, "%d", &(crossword->content[i][j])) != 1)
+            {
+                fclose(file);
+                free(crossword);
+                return NULL;
+            }
+        }
+    }
+
+    fclose(file);
+    return crossword;
 }

@@ -1,6 +1,8 @@
 #ifndef CROSSWORD_H
 #define CROSSWORD_H
 
+#include <stdbool.h>
+
 typedef struct _Crossword 
 {
     int width;
@@ -15,7 +17,7 @@ void crossword_clear(Crossword *crossword);
 void crossword_invert_template(Crossword *crossword);
 void crossword_set_template_white(Crossword *crossword);
 void crossword_set_template_black(Crossword *crossword);
-int crossword_save_to_file(char *filename);
+bool crossword_save_to_file(Crossword *crossword, char *filename);
 Crossword* crossword_load_from_file(char *filename);
 
 #endif
