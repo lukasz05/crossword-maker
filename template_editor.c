@@ -15,8 +15,8 @@ typedef struct {
     GtkWindow *parent;
     GtkGrid *grid;
     Crossword *template;
+    char *filename;
 } ToolButtonCallbackData;
-
 
 static bool dialog_request_size(GtkWindow *parent, int *width, int *height)
 {
@@ -125,6 +125,35 @@ static void grid_refresh_buttons(GtkGrid *grid, Crossword *template, int prev_w,
         gtk_grid_remove_row(grid, j);
 }
 
+static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *template = tool_data->template;
+    if(tool_data->filename == NULL)
+    {
+        printf("ok1\n");
+        GtkWidget *file_chooser = gtk_file_chooser_dialog_new("Save template", tool_data->parent, 
+                                                                GTK_FILE_CHOOSER_ACTION_SAVE,
+                                                                "Cancel", GTK_RESPONSE_CANCEL,
+                                                                "Save", GTK_RESPONSE_ACCEPT, NULL);
+        printf("ok2\n");
+        int res = gtk_dialog_run(GTK_DIALOG(file_chooser));
+        if(res == GTK_RESPONSE_ACCEPT)
+        {
+            tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
+            printf("filename: %s\n", tool_data->filename);
+            gtk_widget_destroy(file_chooser);
+        }
+        else
+        {
+            gtk_widget_destroy(file_chooser); 
+            return;
+        }
+    }
+
+    crossword_save_to_file(template, tool_data->filename);
+}
+
 static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
 {
     ToolButtonCallbackData *tool_data = data;
@@ -158,8 +187,11 @@ static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
 }
 
 
-GtkWidget* template_editor_window_init(Crossword *template)
+GtkWidget* template_editor_window_init(Crossword *template, char *filename)
 {
+    if(template == NULL)
+        template = crossword_load_from_file(filename);
+
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
 
@@ -170,9 +202,15 @@ GtkWidget* template_editor_window_init(Crossword *template)
     GtkWidget *save_button = gtk_button_new();
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
     GtkWidget *save_image = gtk_image_new_from_file("icons/media-floppy.svg");
+    ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    save_tool_data->parent = window;
+    save_tool_data->filename = filename;
+    save_tool_data->grid = GTK_GRID(grid);
+    save_tool_data->template = template;
     gtk_button_set_image(GTK_BUTTON(save_button), save_image);
     gtk_tool_item_set_tooltip_text(save_tool_button, "Save");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), save_tool_button, -1);
+    g_signal_connect(save_tool_button, "clicked", G_CALLBACK(tool_save_clicked_callback), save_tool_data);
     
     GtkToolItem *separator = gtk_separator_tool_item_new();
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), separator, -1);
