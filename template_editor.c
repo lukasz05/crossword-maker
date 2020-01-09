@@ -131,17 +131,14 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
     Crossword *template = tool_data->template;
     if(tool_data->filename == NULL)
     {
-        printf("ok1\n");
         GtkWidget *file_chooser = gtk_file_chooser_dialog_new("Save template", tool_data->parent, 
                                                                 GTK_FILE_CHOOSER_ACTION_SAVE,
                                                                 "Cancel", GTK_RESPONSE_CANCEL,
                                                                 "Save", GTK_RESPONSE_ACCEPT, NULL);
-        printf("ok2\n");
         int res = gtk_dialog_run(GTK_DIALOG(file_chooser));
         if(res == GTK_RESPONSE_ACCEPT)
         {
             tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-            printf("filename: %s\n", tool_data->filename);
             gtk_widget_destroy(file_chooser);
         }
         else
