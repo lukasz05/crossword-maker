@@ -3,12 +3,22 @@
 
 #include "list.h"
 
+List* list_init()
+{
+    List *list = malloc(sizeof(List));
+    list->front = NULL;
+    list->end = NULL;
+    list->size = 0;
+    return list;
+}
+
 void list_add(List *L, char *str)
 {
     ListNode *node = malloc(sizeof(ListNode));
     if(node == NULL) return;
     node->next = NULL;
     node->str = malloc(sizeof(char) * (strlen(str) + 1));
+
     if(node->str == NULL)
     {
         free(node);
@@ -16,45 +26,39 @@ void list_add(List *L, char *str)
     }
     strcpy(node->str, str);
 
-    if(*L != NULL)
+    if(L->end != NULL)
     {
-        ListNode *l = *L;
-        while(l->next != NULL)
-            l = l->next;
-        l->next = node;
+        L->end->next = node;
+        L->end = node;
     }
     else 
-        *L = node;
+    {
+        L->front = node;
+        L->end = node;
+    }
+    L->size++;
 }
 
 void list_clear(List *L)
 {
-    if(L == NULL) return;
-    ListNode *l = *L;
+    if(L->front == NULL) return;
+    ListNode *l = L->front;
     while(l != NULL)
     {
         ListNode *tmp = l->next;
         free(l);
         l = tmp;
     }
-    *L = NULL;
+    L->front = NULL;
+    L->end = NULL;
 }
 
 bool list_is_empty(List L)
 {
-    return (L == NULL);
+    return (L.size == 0);
 }
 
 int list_size(List L)
 {
-    if(list_is_empty(L)) return 0;
-
-    int size = 0;
-    ListNode *l = L;
-    while(l != NULL)
-    {
-        size++;
-        l = l->next;
-    }
-    return size;
+    return L.size;
 }
