@@ -11,9 +11,9 @@ typedef struct list
 
 typedef ListNode *List; 
 
-List* list_init();
-void list_add(List L, char *str);
-void list_clear(List L);
+void list_add(List *L, char *str);
+void list_clear(List *L);
 bool list_is_empty(List L);
+int list_size(List L);
 
 #endif

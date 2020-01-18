@@ -1,22 +1,13 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "list.h"
 
-List list_init()
-{
-    List L = malloc(sizeof(ListNode));
-    if(L == NULL) return NULL;
-
-    L->str = NULL;
-    L->next = NULL;
-    return L;
-}
-
 void list_add(List *L, char *str)
 {
-    ListNode *node = list_init();
+    ListNode *node = malloc(sizeof(ListNode));
     if(node == NULL) return;
-    node->next == NULL;
+    node->next = NULL;
     node->str = malloc(sizeof(char) * (strlen(str) + 1));
     if(node->str == NULL)
     {
@@ -40,7 +31,7 @@ void list_clear(List *L)
 {
     if(L == NULL) return;
     ListNode *l = *L;
-    while(l->next != NULL)
+    while(l != NULL)
     {
         ListNode *tmp = l->next;
         free(l);
@@ -52,4 +43,18 @@ void list_clear(List *L)
 bool list_is_empty(List L)
 {
     return (L == NULL);
+}
+
+int list_size(List L)
+{
+    if(list_is_empty(L)) return 0;
+
+    int size = 0;
+    ListNode *l = L;
+    while(l != NULL)
+    {
+        size++;
+        l = l->next;
+    }
+    return size;
 }
