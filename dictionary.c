@@ -36,12 +36,18 @@ Dictionary* dictionary_load_from_file(char *filename)
         if(buf[len - 1] != '\n') continue;
         for(int i = len - 1; i >= 0; i--)
         {
-            if(isspace(buf[i])) buf[i] = '\0';
+            if(isspace(buf[i]))
+            {
+                buf[i] = '\0';
+                len--;
+            }
             else break;
         }
         int utf8_len = g_utf8_strlen(buf, -1);
         if(utf8_len > MAX_WORD_LENGTH) continue;
-        list_add(dict->words_by_length[utf8_len], buf);
+        char *tmp = g_utf8_strup(buf, len);
+        list_add(dict->words_by_length[utf8_len], tmp);
+        free(tmp);
     }
     fclose(file);
     return dict;
@@ -67,6 +73,8 @@ List* dictionary_find_words(Dictionary* dict, char *pattern)
         bool ok = true;
         char *a = pattern;
         char *b = L->str;
+        
+
         //printf("a: %s b: %s (%d)\n", a, b, g_utf8_strlen(b, -1));
         while(*a != '\0' && *b != '\0')
         {
