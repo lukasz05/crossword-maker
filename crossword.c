@@ -156,3 +156,35 @@ Crossword* crossword_load_from_file(char *filename)
     fclose(file);
     return crossword;
 }
+
+char* crossword_get_word_pattern(Crossword *crossword, int x, int y, int orientation)
+{
+    int length = 0;
+    if(x < 0 || x >= crossword->width) return NULL;
+    if(y < 0 || y >= crossword->height) return NULL;
+    int i = y;
+    int j = x;
+    while(i < crossword->height && j < crossword->width && crossword->content[i][j] != 0)
+    {
+        length++;
+        if(orientation == 0) j++;
+        else i++;
+    }
+    if(length == 0) return NULL;
+
+    char *pattern = malloc(sizeof(char) * length + 1);
+    if(pattern == NULL) return NULL;
+
+    int pos = 0;
+    while(y < crossword->height && x < crossword->width && crossword->content[y][x] != 0)
+    {
+        char c = crossword->content[y][x];
+        if(c == ' ') pattern[pos] = '*';
+        else pattern[pos] = c;
+        pos++;
+        if(orientation == 0) x++;
+        else y++;
+    }
+    pattern[length] = '\0';
+    return pattern;
+}
