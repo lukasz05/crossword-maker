@@ -68,9 +68,10 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - crossword editor");
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *toolbar = gtk_toolbar_new();
     GtkWidget *grid = gtk_grid_new();
 
@@ -118,6 +119,41 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
         }
     }
     gtk_box_pack_start(GTK_BOX(hbox), grid, TRUE, TRUE, 0);
+
+    GtkWidget *sidebox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    GtkWidget *suggestions_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(suggestions_label), "<b>Suggestions</b>");
+    gtk_widget_set_margin_start(suggestions_label, 5);
+    gtk_widget_set_margin_end(suggestions_label, 5);
+    gtk_box_pack_start(GTK_BOX(sidebox), suggestions_label, FALSE, FALSE, 0);
+
+    GtkWidget *hradio = gtk_radio_button_new_with_label(NULL, "Horizontal");
+    gtk_widget_set_margin_top(hradio, 5);
+    gtk_widget_set_margin_start(hradio, 5);
+    gtk_widget_set_margin_end(hradio, 5);
+    gtk_box_pack_start(GTK_BOX(sidebox), hradio, FALSE, FALSE, 0);
+    GtkWidget *vradio = gtk_radio_button_new_with_label(gtk_radio_button_get_group(hradio), "Vertical");
+    gtk_widget_set_margin_start(vradio, 5);
+    gtk_widget_set_margin_end(vradio, 5);
+    gtk_box_pack_start(GTK_BOX(sidebox), vradio, FALSE, FALSE, 0);
+
+    GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+    gtk_list_store_insert_with_values(store, NULL, -1, 0, "dom", -1);
+    gtk_list_store_insert_with_values(store, NULL, -1, 0, "ala", -1);
+    gtk_list_store_insert_with_values(store, NULL, -1, 0, "kot", -1);
+    GtkWidget *tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    g_object_unref(store);
+    GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("text", gtk_cell_renderer_text_new(),
+                                                                          "text", 0, NULL);
+    gtk_tree_view_column_set_min_width(column, 150);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
+    gtk_widget_set_margin_top(tree_view, 5);
+    gtk_widget_set_margin_start(tree_view, 5);
+    gtk_widget_set_margin_end(tree_view, 5);
+    gtk_box_pack_start(GTK_BOX(sidebox), tree_view, TRUE, TRUE, 0);
+
+    gtk_box_pack_start(GTK_BOX(hbox), sidebox, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
