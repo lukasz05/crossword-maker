@@ -181,6 +181,7 @@ static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
         crossword_resize(template, new_w, new_h);
         grid_refresh_buttons(tool_data->grid, template, w, h);
     }
+    gtk_window_resize(tool_data->parent, 1, 1);
 }
 
 
@@ -219,7 +220,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     clear_tool_data->grid = GTK_GRID(grid);
     clear_tool_data->template = template;
     gtk_button_set_image(GTK_BUTTON(clear_button), clear_image);
-    gtk_tool_item_set_tooltip_text(clear_tool_button, "Set all to white");
+    gtk_tool_item_set_tooltip_text(clear_tool_button, "Set all cells to white");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), clear_tool_button, -1);
     g_signal_connect(clear_tool_button, "clicked", G_CALLBACK(tool_clear_clicked_callback), clear_tool_data);
 
