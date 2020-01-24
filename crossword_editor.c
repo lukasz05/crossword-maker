@@ -74,7 +74,7 @@ static void entry_set_to_black(GtkWidget *entry)
 static void grid_entry_changed_callback(GtkWidget *entry, gpointer data)
 {
     GridEntryEditCallbackData *callback_data = data;
-    char *s = gtk_entry_get_text(GTK_ENTRY(entry));
+    const char *s = gtk_entry_get_text(GTK_ENTRY(entry));
     s = g_utf8_strup(s, strlen(s));
     int c = g_utf8_get_char(s);
     if(c == 0) c = ' ';
@@ -91,7 +91,6 @@ static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *eve
     callback_data->pos->y = callback_data->y;
     char *pattern = crossword_get_word_pattern(callback_data->crossword, callback_data->x, callback_data->y, 
                                                *(callback_data->orientation));
-    g_printf("pattern: %s\n", pattern);
     List *suggestions = dictionary_find_words(callback_data->dictionary, pattern);
     GtkTreeModel *model = get_tree_model(suggestions);
     gtk_tree_view_set_model(callback_data->tree_view, model);
@@ -102,24 +101,19 @@ static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *eve
 static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
 {
     ToolButtonCallbackData *tool_data = data;
-    Crossword *crossword= tool_data->crossword;
+    Crossword *crossword = tool_data->crossword;
     if(tool_data->filename == NULL)
     {
-        GtkWidget *file_chooser = gtk_file_chooser_dialog_new("Save crossword", tool_data->parent, 
-                                                                GTK_FILE_CHOOSER_ACTION_SAVE,
-                                                                "Cancel", GTK_RESPONSE_CANCEL,
-                                                                "Save", GTK_RESPONSE_ACCEPT, NULL);
-        int res = gtk_dialog_run(GTK_DIALOG(file_chooser));
+        GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+        GtkFileChooserNative *dialog = gtk_file_chooser_native_new("Save crossword", tool_data->parent, 
+                                                                         action, "_Save", "_Cancel");
+
+        int res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog));
         if(res == GTK_RESPONSE_ACCEPT)
         {
-            tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-            gtk_widget_destroy(file_chooser);
+            tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
         }
-        else
-        {
-            gtk_widget_destroy(file_chooser); 
-            return;
-        }
+        else return;
     }
 
     crossword_save_to_file(crossword, tool_data->filename);
@@ -150,8 +144,6 @@ static void tree_row_activated_callback(GtkTreeView *tree_view, GtkTreePath *pat
     gtk_tree_model_get_iter(model, &iter, path);
     gtk_tree_model_get(model, &iter, 0, &word, -1);
     
-    int pos = 0;
-    int len = strlen(word);
     char *c = word;
     while(x < crossword->width && y < crossword->height && crossword->content[y][x] != 0)
     {
@@ -188,7 +180,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
     GtkWidget *save_image = gtk_image_new_from_file("icons/media-floppy.svg");
     ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
-    save_tool_data->parent = window;
+    save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
     save_tool_data->crossword = crossword;
     gtk_button_set_image(GTK_BUTTON(save_button), save_image);
@@ -212,14 +204,14 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     hdata->orientation = orientation;
     hdata->pos = last_pos;
     hdata->radio_orientation = 0;
-    hdata->tree_view = tree_view;
+    hdata->tree_view = GTK_TREE_VIEW(tree_view);
     RadioButtonCallbackData *vdata = malloc(sizeof(RadioButtonCallbackData));
     vdata->crossword = crossword;
     vdata->dictionary = dictionary;
     vdata->orientation = orientation;
     vdata->pos = last_pos;
     vdata->radio_orientation = 1;
-    vdata->tree_view = tree_view;
+    vdata->tree_view = GTK_TREE_VIEW(tree_view);
 
     GtkWidget *hradio = gtk_radio_button_new_with_label(NULL, "Horizontal");
     gtk_widget_set_margin_top(hradio, 5);
@@ -227,7 +219,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_widget_set_margin_end(hradio, 5);
     gtk_box_pack_start(GTK_BOX(sidebox), hradio, FALSE, FALSE, 0);
     g_signal_connect(hradio, "toggled", G_CALLBACK(radio_button_clicked_callback), hdata);
-    GtkWidget *vradio = gtk_radio_button_new_with_label(gtk_radio_button_get_group(hradio), "Vertical");
+    GtkWidget *vradio = gtk_radio_button_new_with_label(gtk_radio_button_get_group(GTK_RADIO_BUTTON(hradio)), "Vertical");
     gtk_widget_set_margin_start(vradio, 5);
     gtk_widget_set_margin_end(vradio, 5);
     gtk_box_pack_start(GTK_BOX(sidebox), vradio, FALSE, FALSE, 0);
@@ -244,7 +236,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     TreeRowActvatedCallbackData *tree_data = malloc(sizeof(TreeRowActvatedCallbackData));
     tree_data->crossword = crossword;
-    tree_data->grid = grid;
+    tree_data->grid = GTK_GRID(grid);
     tree_data->pos = last_pos;
     tree_data->orientation = orientation; 
     g_signal_connect(tree_view, "row-activated", G_CALLBACK(tree_row_activated_callback), tree_data);
@@ -272,7 +264,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
             focus_data->pos = last_pos;
             focus_data->crossword = crossword;
             focus_data->dictionary = dictionary;
-            focus_data->tree_view = tree_view;
+            focus_data->tree_view = GTK_TREE_VIEW(tree_view);
             gtk_entry_set_width_chars(GTK_ENTRY(entry), 2);
             gtk_entry_set_max_width_chars(GTK_ENTRY(entry), 2);
             gtk_entry_set_max_length(GTK_ENTRY(entry), 1);
