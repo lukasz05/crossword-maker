@@ -21,31 +21,49 @@ static char* get_filename(GtkWidget *parent)
     else return NULL;
 }
 
+static void show_window_callback(GtkWidget *window, gpointer data)
+{
+    gtk_widget_show_all(data);
+}
+
 static void template_new_callback(GtkWidget *button, gpointer data)
 {
     Crossword *template = crossword_init(DEFAULT_CROSSWORD_WIDTH, DEFAULT_CROSSWORD_HEIGHT);
     GtkWidget *editor = template_editor_window_init(template, NULL);
+    g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
+    gtk_widget_hide(data);
     gtk_widget_show_all(editor);
 }
 
 static void template_open_callback(GtkWidget *button, gpointer data)
 {
     char *filename = get_filename(data);
+    if(filename == NULL) return;
     GtkWidget *editor = template_editor_window_init(NULL, filename);
+    g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
+    gtk_widget_hide(data);
     gtk_widget_show_all(editor);
 }
 
 static void crossword_new_callback(GtkWidget *button, gpointer data)
 {
-    Crossword *template = crossword_init(DEFAULT_CROSSWORD_WIDTH, DEFAULT_CROSSWORD_HEIGHT);
+    char *filename = get_filename(data);
+    if(filename == NULL) return;
+    Crossword *template = crossword_load_from_file(filename);
+    if(template == NULL) return;
     GtkWidget *editor = crossword_editor_window_init(template, NULL);
+    g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
+    gtk_widget_hide(data);
     gtk_widget_show_all(editor);
 }
 
 static void crossword_open_callback(GtkWidget *button, gpointer data)
 {
     char *filename = get_filename(data);
+    if(filename == NULL) return;
     GtkWidget *editor = crossword_editor_window_init(NULL, filename);
+    g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
+    gtk_widget_hide(data);
     gtk_widget_show_all(editor);
 }
 
@@ -65,7 +83,7 @@ int main(int argc, char *argv[])
     gtk_widget_set_margin_end(template_new, 10);
     gtk_widget_set_margin_top(template_new, 10);
     gtk_box_pack_start(GTK_BOX(box), template_new, TRUE, TRUE, 0);
-    g_signal_connect(template_new, "clicked", G_CALLBACK(template_new_callback), NULL);
+    g_signal_connect(template_new, "clicked", G_CALLBACK(template_new_callback), menu_window);
 
     GtkWidget *template_open = gtk_button_new();
     gtk_button_set_label(GTK_BUTTON(template_open), "Open template");
@@ -79,7 +97,7 @@ int main(int argc, char *argv[])
     gtk_widget_set_margin_start(crossword_new, 10);
     gtk_widget_set_margin_end(crossword_new, 10);
     gtk_box_pack_start(GTK_BOX(box), crossword_new, TRUE, TRUE, 0);
-    g_signal_connect(crossword_new, "clicked", G_CALLBACK(crossword_new_callback), NULL);
+    g_signal_connect(crossword_new, "clicked", G_CALLBACK(crossword_new_callback), menu_window);
 
     GtkWidget *crossword_open = gtk_button_new();
     gtk_button_set_label(GTK_BUTTON(crossword_open), "Open crossword");
@@ -90,6 +108,8 @@ int main(int argc, char *argv[])
 
     gtk_box_pack_start(GTK_BOX(box), crossword_open, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(menu_window), box);
+
+    g_signal_connect(menu_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_widget_show_all(menu_window);
 
     gtk_main();
