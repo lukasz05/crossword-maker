@@ -190,6 +190,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *toolbar = gtk_toolbar_new();
