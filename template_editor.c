@@ -131,23 +131,21 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
     Crossword *template = tool_data->template;
     if(tool_data->filename == NULL)
     {
-        GtkWidget *file_chooser = gtk_file_chooser_dialog_new("Save template", tool_data->parent, 
-                                                                GTK_FILE_CHOOSER_ACTION_SAVE,
-                                                                "Cancel", GTK_RESPONSE_CANCEL,
-                                                                "Save", GTK_RESPONSE_ACCEPT, NULL);
-        int res = gtk_dialog_run(GTK_DIALOG(file_chooser));
+        GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+        GtkFileChooserNative *dialog = gtk_file_chooser_native_new("Save crossword", tool_data->parent, 
+                                                                         action, "_Save", "_Cancel");
+
+        int res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog));
         if(res == GTK_RESPONSE_ACCEPT)
         {
-            tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-            gtk_widget_destroy(file_chooser);
+            tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            g_object_unref(dialog);
         }
         else
         {
-            gtk_widget_destroy(file_chooser); 
-            return;
+            g_object_unref(dialog);
         }
     }
-
     crossword_save_to_file(template, tool_data->filename);
 }
 
@@ -201,7 +199,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
     GtkWidget *save_image = gtk_image_new_from_file("icons/media-floppy.svg");
     ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
-    save_tool_data->parent = window;
+    save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
     save_tool_data->grid = GTK_GRID(grid);
     save_tool_data->template = template;

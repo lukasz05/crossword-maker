@@ -112,8 +112,13 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
         if(res == GTK_RESPONSE_ACCEPT)
         {
             tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            g_object_unref(dialog);
         }
-        else return;
+        else
+        {
+            g_object_unref(dialog);
+            return;
+        }
     }
 
     crossword_save_to_file(crossword, tool_data->filename);

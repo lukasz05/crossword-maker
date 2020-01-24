@@ -16,9 +16,15 @@ static char* get_filename(GtkWidget *parent)
     if(res == GTK_RESPONSE_ACCEPT)
     {
         GtkFileChooser *file_chooser = GTK_FILE_CHOOSER(dialog);
-        return gtk_file_chooser_get_filename(file_chooser);
+        char* filename =  gtk_file_chooser_get_filename(file_chooser);
+        g_object_unref(dialog);
+        return filename;
     }
-    else return NULL;
+    else
+    {
+        g_object_unref(dialog);
+        return NULL;
+    }
 }
 
 static void show_window_callback(GtkWidget *window, gpointer data)
