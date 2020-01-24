@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <gtk/gtk.h>
 
 #include "crossword.h"
 
@@ -159,29 +160,34 @@ Crossword* crossword_load_from_file(char *filename)
 
 char* crossword_get_word_pattern(Crossword *crossword, int x, int y, int orientation)
 {
-    int length = 0;
     if(x < 0 || x >= crossword->width) return NULL;
     if(y < 0 || y >= crossword->height) return NULL;
+    int length = 0;
     int i = y;
     int j = x;
+
+    char buf[6];
     while(i < crossword->height && j < crossword->width && crossword->content[i][j] != 0)
     {
-        length++;
+        length += g_unichar_to_utf8(crossword->content[i][j], buf);
         if(orientation == 0) j++;
         else i++;
     }
     if(length == 0) return NULL;
 
-    char *pattern = malloc(sizeof(char) * length + 1);
+    char *pattern = malloc(sizeof(char) * (length + 1));
     if(pattern == NULL) return NULL;
 
     int pos = 0;
     while(y < crossword->height && x < crossword->width && crossword->content[y][x] != 0)
     {
-        char c = crossword->content[y][x];
-        if(c == ' ') pattern[pos] = '*';
-        else pattern[pos] = c;
-        pos++;
+        int l = g_unichar_to_utf8(crossword->content[y][x], buf);
+        for(int i = 0; i < l; i++)
+        {
+            if(buf[i] == ' ') pattern[pos] = '*';
+            else pattern[pos] = buf[i];
+            pos++;
+        }
         if(orientation == 0) x++;
         else y++;
     }

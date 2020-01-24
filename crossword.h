@@ -20,5 +20,6 @@ void crossword_set_template_black(Crossword *crossword);
 bool crossword_save_to_file(Crossword *crossword, char *filename);
 Crossword* crossword_load_from_file(char *filename);
 char* crossword_get_word_pattern(Crossword *crossword, int x, int y, int orientation);
+void crossword_place_word(Crossword *crossword, int x, int y, int orientation, char *word);
 
 #endif

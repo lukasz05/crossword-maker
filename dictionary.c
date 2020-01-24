@@ -64,27 +64,27 @@ List* dictionary_find_words(Dictionary* dict, char *pattern)
 {
     int len = g_utf8_strlen(pattern, -1);
     if(len > MAX_WORD_LENGTH) NULL;
-    //printf("len: %d\n", len);
 
     List *result = list_init();
     ListNode *L = dict->words_by_length[len]->front;
     while(L != NULL)
     {
-        bool ok = true;
+        bool ok = false;
         char *a = pattern;
         char *b = L->str;
-        
-
-        //printf("a: %s b: %s (%d)\n", a, b, g_utf8_strlen(b, -1));
-        while(*a != '\0' && *b != '\0')
+        if(strlen(a) == strlen(b))
         {
-            if(*a != '*' && *a != *b)
+            ok = true;
+            while(*a != '\0' && *b != '\0')
             {
-                ok = false;
-                break;
+                if(*a != '*' && g_utf8_get_char(a) != g_utf8_get_char(b))
+                {
+                    ok = false;
+                    break;
+                }
+                a = g_utf8_next_char(a);
+                b = g_utf8_next_char(b);
             }
-            a = g_utf8_next_char(a);
-            b = g_utf8_next_char(b);
         }
         if(ok) list_add(result, L->str);
         L = L->next;

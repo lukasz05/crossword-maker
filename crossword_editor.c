@@ -34,6 +34,13 @@ typedef struct {
 } RadioButtonCallbackData;
 
 typedef struct {
+    LastActiveEntryPos *pos;
+    int *orientation;
+    GtkGrid *grid;
+    Crossword *crossword;
+} TreeRowActvatedCallbackData;
+
+typedef struct {
     GtkWindow *parent;
     Crossword *crossword;
     char *filename;
@@ -69,10 +76,12 @@ static void grid_entry_changed_callback(GtkWidget *entry, gpointer data)
     GridEntryEditCallbackData *callback_data = data;
     char *s = gtk_entry_get_text(GTK_ENTRY(entry));
     s = g_utf8_strup(s, strlen(s));
+    int c = g_utf8_get_char(s);
+    if(c == 0) c = ' ';
     gtk_entry_set_text(GTK_ENTRY(entry), s);
     int x = callback_data->x;
     int y = callback_data->y;
-    callback_data->crossword->content[y][x] = g_utf8_get_char(s);
+    callback_data->crossword->content[y][x] = c;
 }
 
 static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *event, gpointer data)
@@ -82,7 +91,7 @@ static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *eve
     callback_data->pos->y = callback_data->y;
     char *pattern = crossword_get_word_pattern(callback_data->crossword, callback_data->x, callback_data->y, 
                                                *(callback_data->orientation));
-    
+    g_printf("pattern: %s\n", pattern);
     List *suggestions = dictionary_find_words(callback_data->dictionary, pattern);
     GtkTreeModel *model = get_tree_model(suggestions);
     gtk_tree_view_set_model(callback_data->tree_view, model);
@@ -129,12 +138,39 @@ static void radio_button_clicked_callback(GtkWidget *radio, gpointer data)
     g_object_unref(model);
 }
 
+static void tree_row_activated_callback(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data)
+{
+    TreeRowActvatedCallbackData *callback_data = data;
+    int x = callback_data->pos->x;
+    int y = callback_data->pos->y;
+    Crossword *crossword = callback_data->crossword;
+    char *word;
+    GtkTreeIter iter;
+    GtkTreeModel *model = gtk_tree_view_get_model(tree_view);
+    gtk_tree_model_get_iter(model, &iter, path);
+    gtk_tree_model_get(model, &iter, 0, &word, -1);
+    
+    int pos = 0;
+    int len = strlen(word);
+    char *c = word;
+    while(x < crossword->width && y < crossword->height && crossword->content[y][x] != 0)
+    {
+        crossword->content[y][x] = g_utf8_get_char(c);
+        GtkWidget *entry = gtk_grid_get_child_at(callback_data->grid, x, y);
+        gtk_entry_set_text(GTK_ENTRY(entry), c);
+        if(*(callback_data->orientation) == 0) x++;
+        else y++;
+        c = g_utf8_next_char(c);
+    }
+    free(word);
+}
+
 GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 {
     if(crossword == NULL)
         crossword = crossword_load_from_file(filename);
 
-    Dictionary *dictionary = dictionary_load_from_file("words.txt");
+    Dictionary *dictionary = dictionary_load_from_file("slowa.txt");
     LastActiveEntryPos *last_pos = malloc(sizeof(LastActiveEntryPos));
     int *orientation = malloc(sizeof(int));
     *orientation = 0;
@@ -167,7 +203,6 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_widget_set_margin_start(suggestions_label, 5);
     gtk_widget_set_margin_end(suggestions_label, 5);
     gtk_box_pack_start(GTK_BOX(sidebox), suggestions_label, FALSE, FALSE, 0);
-
 
     GtkWidget *tree_view = gtk_tree_view_new();
 
@@ -206,6 +241,14 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_widget_set_margin_top(tree_view, 5);
     gtk_widget_set_margin_start(tree_view, 5);
     gtk_widget_set_margin_end(tree_view, 5);
+
+    TreeRowActvatedCallbackData *tree_data = malloc(sizeof(TreeRowActvatedCallbackData));
+    tree_data->crossword = crossword;
+    tree_data->grid = grid;
+    tree_data->pos = last_pos;
+    tree_data->orientation = orientation; 
+    g_signal_connect(tree_view, "row-activated", G_CALLBACK(tree_row_activated_callback), tree_data);
+
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll), 150);
     gtk_container_add(GTK_CONTAINER(scroll), tree_view);
