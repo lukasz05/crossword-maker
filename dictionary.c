@@ -17,17 +17,12 @@ Dictionary* dictionary_init()
     return dict;
 }
 
-Dictionary* dictionary_load_from_file(char *filename)
+void dictionary_load_from_file(Dictionary *dictionary, char *filename)
 {
     FILE *file = fopen(filename, "r");
-    if(file == NULL) return NULL;
+    if(file == NULL) return;
 
-    Dictionary *dict = dictionary_init();
-    if(dict == NULL)
-    {
-        fclose(file);
-        return NULL;
-    }
+    dictionary_clear(dictionary);
 
     char buf[BUF_SIZE];
     while(fgets(buf, BUF_SIZE, file) != NULL)
@@ -46,11 +41,10 @@ Dictionary* dictionary_load_from_file(char *filename)
         int utf8_len = g_utf8_strlen(buf, -1);
         if(utf8_len > MAX_WORD_LENGTH) continue;
         char *tmp = g_utf8_strup(buf, len);
-        list_add(dict->words_by_length[utf8_len], tmp);
+        list_add(dictionary->words_by_length[utf8_len], tmp);
         free(tmp);
     }
     fclose(file);
-    return dict;
 }
 
 void dictionary_add_word(Dictionary* dict, char *word)

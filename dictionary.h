@@ -11,7 +11,7 @@ typedef struct dictionary
 } Dictionary;
 
 Dictionary* dictionary_init();
-Dictionary* dictionary_load_from_file(char *filename);
+void dictionary_load_from_file(Dictionary *dictionary, char *filename);
 void dictionary_add_word(Dictionary* dict, char *word);
 List* dictionary_find_words(Dictionary* dict, char *pattern);
 void dictionary_clear(Dictionary* dict);

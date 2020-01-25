@@ -41,9 +41,11 @@ typedef struct {
 } TreeRowActvatedCallbackData;
 
 typedef struct {
+    char *filename;
     GtkWindow *parent;
     Crossword *crossword;
-    char *filename;
+    GtkGrid *grid;
+    Dictionary *dictionary;
 } ToolButtonCallbackData;
 
 static GtkTreeModel* get_tree_model(List *suggestions)
@@ -124,6 +126,41 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
     crossword_save_to_file(crossword, tool_data->filename);
 }
 
+static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Crossword *crossword = tool_data->crossword;
+    for(int i = 0; i < crossword->height; i++)
+    {
+        for(int j = 0; j < crossword->width; j++)
+        {
+            if(crossword->content[i][j] != 0)
+            {
+                crossword->content[i][j] = ' ';
+                GtkWidget *entry = gtk_grid_get_child_at(tool_data->grid, j, i);
+                gtk_entry_set_text(GTK_ENTRY(entry), "");
+            }
+        }
+    }
+}
+
+static void tool_dictionary_clicked_callback(GtkWidget *button, gpointer data)
+{
+    ToolButtonCallbackData *tool_data = data;
+    Dictionary *dictionary = tool_data->dictionary;
+    GtkFileChooserNative *dialog;
+    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+    dialog = gtk_file_chooser_native_new("Open file", GTK_WINDOW(tool_data->parent), action, "_Open", "_Cancel");
+    int res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog));
+    if(res == GTK_RESPONSE_ACCEPT)
+    {
+        GtkFileChooser *file_chooser = GTK_FILE_CHOOSER(dialog);
+        char* filename =  gtk_file_chooser_get_filename(file_chooser);
+        dictionary_load_from_file(dictionary, filename);
+    }
+    g_object_unref(dialog);
+}
+
 static void radio_button_clicked_callback(GtkWidget *radio, gpointer data)
 {
     RadioButtonCallbackData *callback_data = data;
@@ -167,7 +204,8 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     if(crossword == NULL)
         crossword = crossword_load_from_file(filename);
 
-    Dictionary *dictionary = dictionary_load_from_file("slowa.txt");
+    Dictionary *dictionary = dictionary_init();
+    dictionary_load_from_file(dictionary, "slowa.txt");
     LastActiveEntryPos *last_pos = malloc(sizeof(LastActiveEntryPos));
     int *orientation = malloc(sizeof(int));
     *orientation = 0;
@@ -193,6 +231,36 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), save_tool_button, -1);
     g_signal_connect(save_tool_button, "clicked", G_CALLBACK(tool_save_clicked_callback), save_tool_data);
     gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, FALSE, 0);
+
+    GtkToolItem *separator = gtk_separator_tool_item_new();
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), separator, -1);
+
+    GtkWidget *clear_button = gtk_button_new();
+    GtkToolItem *clear_tool_button = gtk_tool_button_new(clear_button, NULL);
+    GtkWidget *clear_image = gtk_image_new_from_file("icons/gimp-grid.svg");
+    ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    clear_tool_data->parent = GTK_WINDOW(window);
+    clear_tool_data->filename = filename;
+    clear_tool_data->crossword = crossword;
+    clear_tool_data->grid = GTK_GRID(grid);
+    gtk_button_set_image(GTK_BUTTON(clear_button), clear_image);
+    gtk_tool_item_set_tooltip_text(clear_tool_button, "Clear");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), clear_tool_button, -1);
+    g_signal_connect(clear_tool_button, "clicked", G_CALLBACK(tool_clear_clicked_callback), clear_tool_data);
+
+    GtkWidget *dictionary_button = gtk_button_new();
+    GtkToolItem *dictionary_tool_button = gtk_tool_button_new(dictionary_button, NULL);
+    GtkWidget *dictionary_image = gtk_image_new_from_file("icons/gimp-grid.svg");
+    ToolButtonCallbackData *dictionary_tool_data = malloc(sizeof(ToolButtonCallbackData));
+    dictionary_tool_data->parent = GTK_WINDOW(window);
+    dictionary_tool_data->filename = filename;
+    dictionary_tool_data->crossword = crossword;
+    dictionary_tool_data->grid = GTK_GRID(grid);
+    dictionary_tool_data->dictionary = dictionary;
+    gtk_button_set_image(GTK_BUTTON(dictionary_button), dictionary_image);
+    gtk_tool_item_set_tooltip_text(dictionary_tool_button, "Change the dictionary");
+    gtk_toolbar_insert(GTK_TOOLBAR(toolbar), dictionary_tool_button, -1);
+    g_signal_connect(dictionary_tool_button, "clicked", G_CALLBACK(tool_dictionary_clicked_callback), dictionary_tool_data);
 
     GtkWidget *sidebox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget *suggestions_label = gtk_label_new(NULL);
