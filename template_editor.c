@@ -9,6 +9,8 @@ typedef struct {
     int x;
     int y;
     Crossword *template;
+    bool *unsaved_changes;
+    GtkWidget *save_button;
 } GridButtonCallbackData;
 
 typedef struct {
@@ -16,7 +18,13 @@ typedef struct {
     GtkGrid *grid;
     Crossword *template;
     char *filename;
+    bool *unsaved_changes;
+    GtkWidget *save_button;
 } ToolButtonCallbackData;
+
+typedef struct {
+    bool *unsaved_changes;
+} WindowDeleteEventCallbackData;
 
 static bool dialog_request_size(GtkWindow *parent, int *width, int *height)
 {
@@ -73,6 +81,23 @@ static void button_set_to_white(GtkWidget *button)
     g_object_unref(provider);
 }
 
+static gboolean window_delete_event_callback(GtkWidget *window, GdkEvent *event, gpointer data)
+{
+    WindowDeleteEventCallbackData *callback_data = data;
+    if((*callback_data->unsaved_changes))
+    {
+        GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
+        GtkDialog *dialog = gtk_message_dialog_new(GTK_WINDOW(window), flags, GTK_MESSAGE_WARNING, 
+                                                   GTK_BUTTONS_OK_CANCEL, 
+                                                   "You have unsaved changes that will be lost");
+
+        int response = gtk_dialog_run(dialog);
+        gtk_widget_destroy(dialog);
+        if(response == GTK_RESPONSE_CANCEL) return TRUE;
+    }
+    return FALSE;
+}
+
 static void grid_button_clicked_callback(GtkWidget *button, gpointer data)
 {
     GridButtonCallbackData *callback_data = data;
@@ -90,6 +115,9 @@ static void grid_button_clicked_callback(GtkWidget *button, gpointer data)
         template->content[y][x] = 0;
         button_set_to_black(button);
     }
+
+    *(callback_data)->unsaved_changes = TRUE;
+    gtk_widget_set_sensitive(callback_data->save_button, TRUE);
 }
 
 static void grid_refresh_buttons(GtkGrid *grid, Crossword *template, int prev_w, int prev_h)
@@ -147,6 +175,9 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
         }
     }
     crossword_save_to_file(template, tool_data->filename);
+
+    *(tool_data)->unsaved_changes = FALSE;
+    gtk_widget_set_sensitive(button, FALSE);
 }
 
 static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
@@ -155,6 +186,9 @@ static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
     Crossword *template = tool_data->template;
     crossword_set_template_white(template);
     grid_refresh_buttons(tool_data->grid, template, template->width, template->height);
+
+    *(tool_data)->unsaved_changes = TRUE;
+    gtk_widget_set_sensitive(tool_data->save_button, TRUE);
 }
 
 static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
@@ -163,6 +197,9 @@ static void tool_invert_clicked_callback(GtkWidget *button, gpointer data)
     Crossword *template = tool_data->template;
     crossword_invert_template(template);
     grid_refresh_buttons(tool_data->grid, template, template->width, template->height);
+
+    *(tool_data)->unsaved_changes = TRUE;
+    gtk_widget_set_sensitive(tool_data->save_button, TRUE);
 }
 
 static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
@@ -180,6 +217,9 @@ static void tool_resize_clicked_callback(GtkWidget *button, gpointer data)
         grid_refresh_buttons(tool_data->grid, template, w, h);
     }
     gtk_window_resize(tool_data->parent, 1, 1);
+
+    *(tool_data)->unsaved_changes = TRUE;
+    gtk_widget_set_sensitive(tool_data->save_button, TRUE);
 }
 
 
@@ -188,9 +228,16 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     if(template == NULL)
         template = crossword_load_from_file(filename);
 
+    bool *unsaved_changes = malloc(sizeof(bool));
+    *unsaved_changes = (filename == NULL);
+
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+
+    WindowDeleteEventCallbackData *delete_data = malloc(sizeof(WindowDeleteEventCallbackData));
+    delete_data->unsaved_changes = unsaved_changes;
+    g_signal_connect(window, "delete-event", G_CALLBACK(window_delete_event_callback), delete_data);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *toolbar = gtk_toolbar_new();
@@ -204,9 +251,11 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     save_tool_data->filename = filename;
     save_tool_data->grid = GTK_GRID(grid);
     save_tool_data->template = template;
+    save_tool_data->unsaved_changes = unsaved_changes;
     gtk_button_set_image(GTK_BUTTON(save_button), save_image);
     gtk_tool_item_set_tooltip_text(save_tool_button, "Save");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), save_tool_button, -1);
+    gtk_widget_set_sensitive(GTK_WIDGET(save_tool_button), *unsaved_changes);
     g_signal_connect(save_tool_button, "clicked", G_CALLBACK(tool_save_clicked_callback), save_tool_data);
     
     GtkToolItem *separator = gtk_separator_tool_item_new();
@@ -218,6 +267,8 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
     clear_tool_data->grid = GTK_GRID(grid);
     clear_tool_data->template = template;
+    clear_tool_data->unsaved_changes = unsaved_changes;
+    clear_tool_data->save_button = GTK_WIDGET(save_tool_button);
     gtk_button_set_image(GTK_BUTTON(clear_button), clear_image);
     gtk_tool_item_set_tooltip_text(clear_tool_button, "Set all cells to white");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), clear_tool_button, -1);
@@ -229,6 +280,8 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     ToolButtonCallbackData *invert_tool_data = malloc(sizeof(ToolButtonCallbackData));
     invert_tool_data->grid = GTK_GRID(grid);
     invert_tool_data->template = template;
+    invert_tool_data->unsaved_changes = unsaved_changes;
+    invert_tool_data->save_button = GTK_WIDGET(save_tool_button);
     gtk_button_set_image(GTK_BUTTON(invert_button), invert_image);
     gtk_tool_item_set_tooltip_text(invert_tool_button, "Invert colors");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), invert_tool_button, -1);
@@ -241,6 +294,8 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     resize_tool_data->parent = GTK_WINDOW(window);
     resize_tool_data->grid = GTK_GRID(grid);
     resize_tool_data->template = template;
+    resize_tool_data->unsaved_changes = unsaved_changes;
+    resize_tool_data->save_button = GTK_WIDGET(save_tool_button);
     gtk_button_set_image(GTK_BUTTON(resize_button), resize_image);
     gtk_tool_item_set_tooltip_text(resize_tool_button, "Resize");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), resize_tool_button, -1);
@@ -264,6 +319,8 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
             data->template = template;
             data->y = i;
             data->x = j;
+            data->unsaved_changes = unsaved_changes;
+            data->save_button = GTK_WIDGET(save_tool_button);
             g_signal_connect(button, "clicked", G_CALLBACK(grid_button_clicked_callback), data);
             gtk_grid_attach(GTK_GRID(grid), button, j, i, 1, 1);
         }

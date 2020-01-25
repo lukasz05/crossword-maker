@@ -12,6 +12,8 @@ typedef struct {
     int x;
     int y;
     Crossword *crossword;
+    bool *unsaved_changes;
+    GtkWidget *save_button;
 } GridEntryEditCallbackData;
 
 typedef struct {
@@ -46,7 +48,16 @@ typedef struct {
     Crossword *crossword;
     GtkGrid *grid;
     Dictionary *dictionary;
+    bool *unsaved_changes;
 } ToolButtonCallbackData;
+
+typedef struct {
+    Dictionary *dictionary;
+    Crossword *crossword;
+    LastActiveEntryPos *last_pos;
+    int *orientation;
+    bool *unsaved_changes;
+} WindowDeleteEventCallbackData;
 
 static GtkTreeModel* get_tree_model(List *suggestions)
 {
@@ -73,6 +84,23 @@ static void entry_set_to_black(GtkWidget *entry)
     g_object_unref(provider);
 }
 
+static gboolean window_delete_event_callback(GtkWidget *window, GdkEvent *event, gpointer data)
+{
+    WindowDeleteEventCallbackData *callback_data = data;
+    if((*callback_data->unsaved_changes))
+    {
+        GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
+        GtkDialog *dialog = gtk_message_dialog_new(GTK_WINDOW(window), flags, GTK_MESSAGE_WARNING, 
+                                                   GTK_BUTTONS_OK_CANCEL, 
+                                                   "You have unsaved changes that will be lost");
+
+        int response = gtk_dialog_run(dialog);
+        gtk_widget_destroy(dialog);
+        if(response == GTK_RESPONSE_CANCEL) return TRUE;
+    }
+    return FALSE;
+}
+
 static void grid_entry_changed_callback(GtkWidget *entry, gpointer data)
 {
     GridEntryEditCallbackData *callback_data = data;
@@ -84,6 +112,9 @@ static void grid_entry_changed_callback(GtkWidget *entry, gpointer data)
     int x = callback_data->x;
     int y = callback_data->y;
     callback_data->crossword->content[y][x] = c;
+
+    *(callback_data)->unsaved_changes = true;
+    gtk_widget_set_sensitive(callback_data->save_button, TRUE);
 }
 
 static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *event, gpointer data)
@@ -97,6 +128,9 @@ static gboolean grid_entry_button_press_callback(GtkWidget *entry, GdkEvent *eve
     GtkTreeModel *model = get_tree_model(suggestions);
     gtk_tree_view_set_model(callback_data->tree_view, model);
     g_object_unref(model);
+    list_clear(suggestions);
+    free(suggestions);
+    free(pattern);
     return FALSE;
 }
 
@@ -122,8 +156,10 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
             return;
         }
     }
-
     crossword_save_to_file(crossword, tool_data->filename);
+
+    *(tool_data->unsaved_changes) = false;
+    gtk_widget_set_sensitive(button, FALSE);
 }
 
 static void tool_clear_clicked_callback(GtkWidget *button, gpointer data)
@@ -172,6 +208,9 @@ static void radio_button_clicked_callback(GtkWidget *radio, gpointer data)
     GtkTreeModel *model = get_tree_model(suggestions);
     gtk_tree_view_set_model(callback_data->tree_view, model);
     g_object_unref(model);
+    list_clear(suggestions);
+    free(suggestions);
+    free(pattern);
 }
 
 static void tree_row_activated_callback(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data)
@@ -209,10 +248,15 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     LastActiveEntryPos *last_pos = malloc(sizeof(LastActiveEntryPos));
     int *orientation = malloc(sizeof(int));
     *orientation = 0;
+    bool *unsaved_changes = malloc(sizeof(bool));
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - crossword editor");
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+
+    WindowDeleteEventCallbackData *delete_data = malloc(sizeof(WindowDeleteEventCallbackData));
+    delete_data->unsaved_changes = unsaved_changes;
+    g_signal_connect(window, "delete-event", G_CALLBACK(window_delete_event_callback), delete_data);
 
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -226,6 +270,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
     save_tool_data->crossword = crossword;
+    save_tool_data->unsaved_changes = unsaved_changes;
     gtk_button_set_image(GTK_BUTTON(save_button), save_image);
     gtk_tool_item_set_tooltip_text(save_tool_button, "Save");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), save_tool_button, -1);
@@ -300,7 +345,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("text", gtk_cell_renderer_text_new(),
                                                                           "text", 0, NULL);
-    gtk_tree_view_column_set_min_width(column, 150);
+    gtk_tree_view_column_set_min_width(column, 120);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
     gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
     gtk_widget_set_margin_top(tree_view, 5);
@@ -330,6 +375,8 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
             changed_data->x = j;
             changed_data->y = i;
             changed_data->crossword = crossword;
+            changed_data->unsaved_changes = unsaved_changes;
+            changed_data->save_button = GTK_WIDGET(save_tool_button);
             GridEntryFocusCallbackData *focus_data = malloc(sizeof(GridEntryFocusCallbackData));
             focus_data->x = j;
             focus_data->y = i;
@@ -358,6 +405,9 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
                 entry_set_to_black(entry);
         }
     }
+    *unsaved_changes = (filename == NULL);
+    gtk_widget_set_sensitive(GTK_WIDGET(save_tool_button), *unsaved_changes);
+
     gtk_box_pack_start(GTK_BOX(hbox), grid, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), sidebox, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
