@@ -46,6 +46,7 @@ void list_clear(List *L)
     while(l != NULL)
     {
         ListNode *tmp = l->next;
+        free(l->str);
         free(l);
         l = tmp;
     }

@@ -54,8 +54,6 @@ typedef struct {
 typedef struct {
     Dictionary *dictionary;
     Crossword *crossword;
-    LastActiveEntryPos *last_pos;
-    int *orientation;
     bool *unsaved_changes;
 } WindowDeleteEventCallbackData;
 
@@ -118,6 +116,10 @@ static gboolean window_delete_event_callback(GtkWidget *window, GdkEvent *event,
         gtk_widget_destroy(dialog);
         if(response == GTK_RESPONSE_CANCEL) return TRUE;
     }
+    dictionary_clear(callback_data->dictionary);
+    crossword_clear(callback_data->crossword);
+    free(callback_data->dictionary);
+    free(callback_data->crossword);
     return FALSE;
 }
 
@@ -437,6 +439,9 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_box_pack_start(GTK_BOX(hbox), sidebox, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
     gtk_container_add(GTK_CONTAINER(window), vbox);
+
+    delete_data->dictionary = dictionary;
+    delete_data->crossword = crossword;
 
     return window;
 }
