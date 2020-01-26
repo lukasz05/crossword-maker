@@ -26,6 +26,26 @@ typedef struct {
     bool *unsaved_changes;
 } WindowDeleteEventCallbackData;
 
+static char* get_window_title(const char *filename)
+{
+    char poc[] = "Crossword Maker - template editor [";
+    char *file;
+    if(filename != NULL)
+        file = g_path_get_basename(filename);
+    else
+    {
+        file = calloc(strlen("untitled") + 1, sizeof(char));
+        strcat(file, "untitled");
+    }
+    int len = strlen(poc) + strlen(file) + 1;
+    char *title = calloc(len + 1, sizeof(char));
+    strcat(title, poc);
+    strcat(title, file);
+    strcat(title, "]");
+    free(file);
+    return title;
+}
+
 static bool dialog_request_size(GtkWindow *parent, int *width, int *height)
 {
     GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
@@ -87,11 +107,11 @@ static gboolean window_delete_event_callback(GtkWidget *window, GdkEvent *event,
     if((*callback_data->unsaved_changes))
     {
         GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
-        GtkDialog *dialog = gtk_message_dialog_new(GTK_WINDOW(window), flags, GTK_MESSAGE_WARNING, 
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window), flags, GTK_MESSAGE_WARNING, 
                                                    GTK_BUTTONS_OK_CANCEL, 
                                                    "You have unsaved changes that will be lost");
 
-        int response = gtk_dialog_run(dialog);
+        int response = gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         if(response == GTK_RESPONSE_CANCEL) return TRUE;
     }
@@ -167,6 +187,9 @@ static void tool_save_clicked_callback(GtkWidget *button, gpointer data)
         if(res == GTK_RESPONSE_ACCEPT)
         {
             tool_data->filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            char *title = get_window_title(tool_data->filename);
+            gtk_window_set_title(tool_data->parent, title);
+            free(title);
             g_object_unref(dialog);
         }
         else
@@ -231,9 +254,11 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     bool *unsaved_changes = malloc(sizeof(bool));
     *unsaved_changes = (filename == NULL);
 
+    char *title = get_window_title(filename);
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Crossword Maker - template editor");
+    gtk_window_set_title(GTK_WINDOW(window), title);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+    free(title);
 
     WindowDeleteEventCallbackData *delete_data = malloc(sizeof(WindowDeleteEventCallbackData));
     delete_data->unsaved_changes = unsaved_changes;
