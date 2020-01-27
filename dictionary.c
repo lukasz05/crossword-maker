@@ -66,19 +66,16 @@ List* dictionary_find_words(Dictionary* dict, char *pattern)
         bool ok = false;
         char *a = pattern;
         char *b = L->str;
-        if(strlen(a) == strlen(b))
+        ok = true;
+        while(*a != '\0' && *b != '\0')
         {
-            ok = true;
-            while(*a != '\0' && *b != '\0')
+            if(*a != '*' && g_utf8_get_char(a) != g_utf8_get_char(b))
             {
-                if(*a != '*' && g_utf8_get_char(a) != g_utf8_get_char(b))
-                {
-                    ok = false;
-                    break;
-                }
-                a = g_utf8_next_char(a);
-                b = g_utf8_next_char(b);
+                ok = false;
+                break;
             }
+            a = g_utf8_next_char(a);
+            b = g_utf8_next_char(b);
         }
         if(ok) list_add(result, L->str);
         L = L->next;
