@@ -375,6 +375,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
     gtk_tree_view_column_set_min_width(column, 120);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
     gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(tree_view), FALSE);
+    gtk_tree_view_set_activate_on_single_click(GTK_TREE_VIEW(tree_view), TRUE);
     gtk_widget_set_margin_top(tree_view, 5);
     gtk_widget_set_margin_start(tree_view, 5);
     gtk_widget_set_margin_end(tree_view, 5);
