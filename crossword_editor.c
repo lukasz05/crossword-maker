@@ -292,7 +292,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *save_button = gtk_button_new();
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
-    GtkWidget *save_image = gtk_image_new_from_file("icons/media-floppy.svg");
+    GtkWidget *save_image = gtk_image_new_from_file("icons/save-fill.svg");
     ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
     save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
@@ -309,20 +309,20 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *clear_button = gtk_button_new();
     GtkToolItem *clear_tool_button = gtk_tool_button_new(clear_button, NULL);
-    GtkWidget *clear_image = gtk_image_new_from_file("icons/gimp-grid.svg");
+    GtkWidget *clear_image = gtk_image_new_from_file("icons/eraser-fill.svg");
     ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
     clear_tool_data->parent = GTK_WINDOW(window);
     clear_tool_data->filename = filename;
     clear_tool_data->crossword = crossword;
     clear_tool_data->grid = GTK_GRID(grid);
     gtk_button_set_image(GTK_BUTTON(clear_button), clear_image);
-    gtk_tool_item_set_tooltip_text(clear_tool_button, "Clear");
+    gtk_tool_item_set_tooltip_text(clear_tool_button, "Erase all");
     gtk_toolbar_insert(GTK_TOOLBAR(toolbar), clear_tool_button, -1);
     g_signal_connect(clear_tool_button, "clicked", G_CALLBACK(tool_clear_clicked_callback), clear_tool_data);
 
     GtkWidget *dictionary_button = gtk_button_new();
     GtkToolItem *dictionary_tool_button = gtk_tool_button_new(dictionary_button, NULL);
-    GtkWidget *dictionary_image = gtk_image_new_from_file("icons/gimp-grid.svg");
+    GtkWidget *dictionary_image = gtk_image_new_from_file("icons/book-fill.svg");
     ToolButtonCallbackData *dictionary_tool_data = malloc(sizeof(ToolButtonCallbackData));
     dictionary_tool_data->parent = GTK_WINDOW(window);
     dictionary_tool_data->filename = filename;
