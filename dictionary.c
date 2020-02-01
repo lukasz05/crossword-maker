@@ -38,6 +38,7 @@ void dictionary_load_from_file(Dictionary *dictionary, char *filename)
             }
             else break;
         }
+        if(g_utf8_validate(buf, -1, NULL) == FALSE) continue;
         int utf8_len = g_utf8_strlen(buf, -1);
         if(utf8_len > MAX_WORD_LENGTH) continue;
         char *tmp = g_utf8_strup(buf, len);

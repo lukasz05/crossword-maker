@@ -7,6 +7,16 @@
 #define DEFAULT_CROSSWORD_HEIGHT 15
 #define DEFAULT_CROSSWORD_WIDTH 15
 
+static void file_open_error(GtkWindow *parent)
+{
+    GtkDialogFlags flags = GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT;
+    GtkWidget *dialog = gtk_message_dialog_new(parent, flags, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, 
+                                                "An error occured while opening the file.");
+
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
 static char* get_filename(GtkWidget *parent)
 {
     GtkFileChooserNative *dialog;
@@ -45,7 +55,13 @@ static void template_open_callback(GtkWidget *button, gpointer data)
 {
     char *filename = get_filename(data);
     if(filename == NULL) return;
-    GtkWidget *editor = template_editor_window_init(NULL, filename);
+    Crossword *template = crossword_load_from_file(filename);
+    if(template == NULL)
+    {
+        file_open_error(data);
+        return;
+    }
+    GtkWidget *editor = template_editor_window_init(template, filename);
     g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
     gtk_widget_hide(data);
     gtk_widget_show_all(editor);
@@ -56,7 +72,11 @@ static void crossword_new_callback(GtkWidget *button, gpointer data)
     char *filename = get_filename(data);
     if(filename == NULL) return;
     Crossword *template = crossword_load_from_file(filename);
-    if(template == NULL) return;
+    if(template == NULL)
+    {
+        file_open_error(data);
+        return;
+    }
     GtkWidget *editor = crossword_editor_window_init(template, NULL);
     g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
     gtk_widget_hide(data);
@@ -67,7 +87,13 @@ static void crossword_open_callback(GtkWidget *button, gpointer data)
 {
     char *filename = get_filename(data);
     if(filename == NULL) return;
-    GtkWidget *editor = crossword_editor_window_init(NULL, filename);
+    Crossword *crossword = crossword_load_from_file(filename);
+    if(crossword == NULL)
+    {
+        file_open_error(data);
+        return;
+    }
+    GtkWidget *editor = crossword_editor_window_init(crossword, filename);
     g_signal_connect(editor, "destroy", G_CALLBACK(show_window_callback), data);
     gtk_widget_hide(data);
     gtk_widget_show_all(editor);

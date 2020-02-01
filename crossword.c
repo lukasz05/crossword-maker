@@ -131,7 +131,19 @@ Crossword* crossword_load_from_file(char *filename)
     if(file == NULL) return NULL;
 
     int width, height;
-    fscanf(file, "%d %d", &width, &height);
+    if(fscanf(file, "%d %d", &width, &height) != 2)
+    {
+        fclose(file);
+        return NULL;
+    }
+
+    if(width < 1 || width > MAX_CROSSWORD_WIDTH || 
+        height < 1 || height > MAX_CROSSWORD_HEIGHT)
+    {
+        fclose(file);
+        return NULL;
+    }
+
     Crossword *crossword = crossword_init(width, height);
     if(crossword == NULL)
     {

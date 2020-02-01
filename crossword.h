@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 
+#define MAX_CROSSWORD_WIDTH 25
+#define MAX_CROSSWORD_HEIGHT 25
+
 typedef struct _Crossword 
 {
     int width;
