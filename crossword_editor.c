@@ -269,7 +269,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
         crossword = crossword_load_from_file(filename);
 
     Dictionary *dictionary = dictionary_init();
-    dictionary_load_from_file(dictionary, "slowa.txt");
+    dictionary_load_from_file(dictionary, DEFAULT_DICTIONARY);
     LastActiveEntryPos *last_pos = malloc(sizeof(LastActiveEntryPos));
     int *orientation = malloc(sizeof(int));
     *orientation = 0;
