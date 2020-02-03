@@ -5,7 +5,7 @@
 
 #include "crossword.h"
 
-#define DEFAULT_DICTIONARY "slowa.txt"
+#define DEFAULT_DICTIONARY "words.txt"
 
 GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename);
 
