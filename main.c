@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     g_signal_connect(template_new, "clicked", G_CALLBACK(template_new_callback), menu_window);
 
     GtkWidget *template_open = gtk_button_new();
-    gtk_button_set_label(GTK_BUTTON(template_open), "Open template");
+    gtk_button_set_label(GTK_BUTTON(template_open), "Open a template");
     gtk_widget_set_margin_start(template_open, 10);
     gtk_widget_set_margin_end(template_open, 10);
     gtk_box_pack_start(GTK_BOX(box), template_open, TRUE, TRUE, 0);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     g_signal_connect(crossword_new, "clicked", G_CALLBACK(crossword_new_callback), menu_window);
 
     GtkWidget *crossword_open = gtk_button_new();
-    gtk_button_set_label(GTK_BUTTON(crossword_open), "Open crossword");
+    gtk_button_set_label(GTK_BUTTON(crossword_open), "Open a crossword");
     gtk_widget_set_margin_start(crossword_open, 10);
     gtk_widget_set_margin_end(crossword_open, 10);
     gtk_widget_set_margin_bottom(crossword_open, 10);
