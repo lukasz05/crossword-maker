@@ -6,7 +6,7 @@
 
 #include "dictionary.h"
 
-#define BUF_SIZE 100
+#define BUF_SIZE 150
 
 Dictionary* dictionary_init()
 {
@@ -46,13 +46,6 @@ void dictionary_load_from_file(Dictionary *dictionary, char *filename)
         free(tmp);
     }
     fclose(file);
-}
-
-void dictionary_add_word(Dictionary* dict, char *word)
-{
-    int len = g_utf8_strlen(word, -1);
-    if(len > MAX_WORD_LENGTH) return;
-    list_add(dict->words_by_length[len], word);
 }
 
 List* dictionary_find_words(Dictionary* dict, char *pattern)

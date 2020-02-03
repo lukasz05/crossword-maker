@@ -3,7 +3,7 @@
 
 #include "list.h"
 
-#define MAX_WORD_LENGTH 50
+#define MAX_WORD_LENGTH 25
 
 typedef struct dictionary
 {
@@ -12,7 +12,6 @@ typedef struct dictionary
 
 Dictionary* dictionary_init();
 void dictionary_load_from_file(Dictionary *dictionary, char *filename);
-void dictionary_add_word(Dictionary* dict, char *word);
 List* dictionary_find_words(Dictionary* dict, char *pattern);
 void dictionary_clear(Dictionary* dict);
 

@@ -53,13 +53,3 @@ void list_clear(List *L)
     L->front = NULL;
     L->end = NULL;
 }
-
-bool list_is_empty(List L)
-{
-    return (L.size == 0);
-}
-
-int list_size(List L)
-{
-    return L.size;
-}

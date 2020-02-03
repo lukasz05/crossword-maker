@@ -99,7 +99,8 @@ void crossword_set_template_white(Crossword *crossword)
 {
     for(int i = 0; i < crossword->height; i++)
         for(int j = 0; j < crossword->width; j++)
-            crossword->content[i][j] = ' ';
+            if(crossword->content[i][j] == 0)
+                crossword->content[i][j] = ' ';
 }
 
 void crossword_set_template_black(Crossword *crossword)
