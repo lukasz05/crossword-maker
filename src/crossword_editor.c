@@ -292,7 +292,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *save_button = gtk_button_new();
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
-    GtkWidget *save_image = gtk_image_new_from_file("icons/save-fill.svg");
+    GtkWidget *save_image = gtk_image_new_from_file("res/save-fill.svg");
     ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
     save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
@@ -309,7 +309,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *clear_button = gtk_button_new();
     GtkToolItem *clear_tool_button = gtk_tool_button_new(clear_button, NULL);
-    GtkWidget *clear_image = gtk_image_new_from_file("icons/eraser-fill.svg");
+    GtkWidget *clear_image = gtk_image_new_from_file("res/eraser-fill.svg");
     ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
     clear_tool_data->parent = GTK_WINDOW(window);
     clear_tool_data->filename = filename;
@@ -322,7 +322,7 @@ GtkWidget* crossword_editor_window_init(Crossword *crossword, char *filename)
 
     GtkWidget *dictionary_button = gtk_button_new();
     GtkToolItem *dictionary_tool_button = gtk_tool_button_new(dictionary_button, NULL);
-    GtkWidget *dictionary_image = gtk_image_new_from_file("icons/book-fill.svg");
+    GtkWidget *dictionary_image = gtk_image_new_from_file("res/book-fill.svg");
     ToolButtonCallbackData *dictionary_tool_data = malloc(sizeof(ToolButtonCallbackData));
     dictionary_tool_data->parent = GTK_WINDOW(window);
     dictionary_tool_data->filename = filename;

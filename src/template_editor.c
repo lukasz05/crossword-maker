@@ -270,7 +270,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
     
     GtkWidget *save_button = gtk_button_new();
     GtkToolItem *save_tool_button = gtk_tool_button_new(save_button, NULL);   
-    GtkWidget *save_image = gtk_image_new_from_file("icons/save-fill.svg");
+    GtkWidget *save_image = gtk_image_new_from_file("res/save-fill.svg");
     ToolButtonCallbackData *save_tool_data = malloc(sizeof(ToolButtonCallbackData));
     save_tool_data->parent = GTK_WINDOW(window);
     save_tool_data->filename = filename;
@@ -288,7 +288,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
 
     GtkWidget *clear_button = gtk_button_new();
     GtkToolItem *clear_tool_button = gtk_tool_button_new(clear_button, NULL);   
-    GtkWidget *clear_image = gtk_image_new_from_file("icons/grid-line.svg");
+    GtkWidget *clear_image = gtk_image_new_from_file("res/grid-line.svg");
     ToolButtonCallbackData *clear_tool_data = malloc(sizeof(ToolButtonCallbackData));
     clear_tool_data->grid = GTK_GRID(grid);
     clear_tool_data->template = template;
@@ -301,7 +301,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
 
     GtkWidget *invert_button = gtk_button_new();
     GtkToolItem *invert_tool_button = gtk_tool_button_new(invert_button, NULL);   
-    GtkWidget *invert_image = gtk_image_new_from_file("icons/contrast-fill.svg");
+    GtkWidget *invert_image = gtk_image_new_from_file("res/contrast-fill.svg");
     ToolButtonCallbackData *invert_tool_data = malloc(sizeof(ToolButtonCallbackData));
     invert_tool_data->grid = GTK_GRID(grid);
     invert_tool_data->template = template;
@@ -314,7 +314,7 @@ GtkWidget* template_editor_window_init(Crossword *template, char *filename)
 
     GtkWidget *resize_button = gtk_button_new();
     GtkToolItem *resize_tool_button = gtk_tool_button_new(resize_button, NULL);   
-    GtkWidget *resize_image = gtk_image_new_from_file("icons/ruler-2-line.svg");
+    GtkWidget *resize_image = gtk_image_new_from_file("res/ruler-2-line.svg");
     ToolButtonCallbackData *resize_tool_data = malloc(sizeof(ToolButtonCallbackData));
     resize_tool_data->parent = GTK_WINDOW(window);
     resize_tool_data->grid = GTK_GRID(grid);
